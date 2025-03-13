@@ -1,0 +1,42 @@
+syntax = "proto3";
+package ais_api;
+option go_package = "grpc/ais_api";
+
+service AISService {
+    rpc GetAisAccountByID(GetAccountStatusRequest) returns (GetAccountStatusResponse) {}
+    // rpc Get
+}
+
+enum Status {
+    active = 0;
+    inactive = 1;
+    closed = 2;
+}
+
+enum AccountType {
+    CASA = 0;
+    GA = 1;
+    VAN = 2;
+}
+
+// enum Source {
+//     MBBanking = 0;
+//     GA = 1;
+//     VAN = 2;
+// }
+message GetAccountStatusRequest {
+    uint64 account_id = 1;
+}
+
+message GetAccountStatusResponse {
+    uint64 account_id = 1;
+    string account_name = 2;
+    AccountType account_type = 3;
+    Status account_status = 4;
+}
+
+/*
+protoc -I="." --go_out=internal/generated api/ais_api.proto
+protoc -I="." --go-grpc_out=internal/generated api/ais_api.proto
+protoc -I="." --grpc-gateway_out=internal/generated api/ais_api.proto --grpc-gateway_opt generate_unbound_methods=true
+*/
