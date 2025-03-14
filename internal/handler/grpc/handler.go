@@ -8,7 +8,8 @@ import (
 
 type grpcHandler struct {
 	ais_api.UnimplementedAISServiceServer
-	accountLogic logic.AccountLogic
+	accountLogic   logic.AccountLogic
+	publisherLogic logic.PublisherLogic
 }
 
 func NewGrpcHandler() ais_api.AISServiceServer {
@@ -29,4 +30,18 @@ func (g grpcHandler) GetAisAccountByID(ctx context.Context, request *ais_api.Get
 		AccountType:   output.Account_type,
 		AccountStatus: output.Account_status,
 	}, nil
+}
+
+func (g grpcHandler) PublishAisAccount(ctx context.Context, request *ais_api.PublishAisAccountRequest) (*ais_api.PublishAisAccountResponse, error) {
+	params := logic.PublishAisAccountParams{
+		Account_id:     request.AccountId,
+		Account_name:   request.AccountName,
+		Account_type:   request.AccountType,
+		Account_status: request.AccountStatus,
+	}
+	_, err := g.publisherLogic.PublishAisAccount(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+	return &ais_api.PublishAisAccountResponse{}, nil
 }

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"ais_service/internal/handler/consumer"
 	"ais_service/internal/handler/grpc"
 	"ais_service/internal/handler/http"
 	"context"
@@ -13,12 +14,14 @@ import (
 type StandaloneServer struct {
 	grpcServer grpc.Server
 	httpServer http.Server
+	consumer   consumer.ConsumerServer
 }
 
-func NewStandaloneServer(grpcServer grpc.Server, httpServer http.Server) *StandaloneServer {
+func NewStandaloneServer(grpcServer grpc.Server, httpServer http.Server, consumer consumer.ConsumerServer) *StandaloneServer {
 	return &StandaloneServer{
 		grpcServer: grpcServer,
 		httpServer: httpServer,
+		consumer:   consumer,
 	}
 }
 
@@ -32,6 +35,9 @@ func (s StandaloneServer) Start() error {
 		s.httpServer.Start(ctx)
 	}()
 
+	go func() {
+		s.consumer.Start(context.Background())
+	}()
 	// Listen for OS termination signals (Ctrl+C, SIGTERM)
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)

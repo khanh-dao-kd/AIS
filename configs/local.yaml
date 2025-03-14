@@ -12,3 +12,6 @@ grpc:
 
 http:
   address: "0.0.0.0:8081"
+
+mq:
+  projectID: "account.event"

@@ -9,7 +9,10 @@ package wiring
 import (
 	"ais_service/internal/configs"
 	"ais_service/internal/dataaccess"
+	"ais_service/internal/dataaccess/database"
+	consumer2 "ais_service/internal/dataaccess/mq/consumer"
 	"ais_service/internal/handler"
+	"ais_service/internal/handler/consumer"
 	"ais_service/internal/handler/grpc"
 	"ais_service/internal/handler/grpc/middleware"
 	"ais_service/internal/handler/http"
@@ -31,8 +34,25 @@ func InitializeServer(configFilePath configs.ConfigFilePath) (*server.Standalone
 	grpcServer := grpc.NewServer(aisServiceServer, configsGRPC, authInterceptor)
 	configsHTTP := config.HTTP
 	httpServer := http.NewServer(configsHTTP, configsGRPC)
-	standaloneServer := server.NewStandaloneServer(grpcServer, httpServer)
+	configsDatabase := config.Database
+	db, cleanup, err := database.InitializeAndMigrateUpDB(configsDatabase)
+	if err != nil {
+		return nil, nil, err
+	}
+	databaseDatabase := database.InitializeGoquDB(db)
+	aisAccountDataAccessor := database.NewAisAccountDataAccessor(databaseDatabase)
+	accountLogic := logic.NewAccountLogic(aisAccountDataAccessor)
+	accountCreatedHandler := consumer.NewAccountCreatedHandler(accountLogic)
+	mq := config.MQ
+	consumerConsumer, err := consumer2.NewPubSubConsumer(mq)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	consumerServer := consumer.NewConsumerServer(accountCreatedHandler, consumerConsumer)
+	standaloneServer := server.NewStandaloneServer(grpcServer, httpServer, consumerServer)
 	return standaloneServer, func() {
+		cleanup()
 	}, nil
 }
 

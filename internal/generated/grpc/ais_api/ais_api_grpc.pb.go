@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	AISService_GetAisAccountByID_FullMethodName = "/ais_api.AISService/GetAisAccountByID"
+	AISService_PublishAisAccount_FullMethodName = "/ais_api.AISService/PublishAisAccount"
 )
 
 // AISServiceClient is the client API for AISService service.
@@ -27,6 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AISServiceClient interface {
 	GetAisAccountByID(ctx context.Context, in *GetAccountStatusRequest, opts ...grpc.CallOption) (*GetAccountStatusResponse, error)
+	PublishAisAccount(ctx context.Context, in *PublishAisAccountRequest, opts ...grpc.CallOption) (*PublishAisAccountResponse, error)
 }
 
 type aISServiceClient struct {
@@ -47,11 +49,22 @@ func (c *aISServiceClient) GetAisAccountByID(ctx context.Context, in *GetAccount
 	return out, nil
 }
 
+func (c *aISServiceClient) PublishAisAccount(ctx context.Context, in *PublishAisAccountRequest, opts ...grpc.CallOption) (*PublishAisAccountResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PublishAisAccountResponse)
+	err := c.cc.Invoke(ctx, AISService_PublishAisAccount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AISServiceServer is the server API for AISService service.
 // All implementations must embed UnimplementedAISServiceServer
 // for forward compatibility.
 type AISServiceServer interface {
 	GetAisAccountByID(context.Context, *GetAccountStatusRequest) (*GetAccountStatusResponse, error)
+	PublishAisAccount(context.Context, *PublishAisAccountRequest) (*PublishAisAccountResponse, error)
 	mustEmbedUnimplementedAISServiceServer()
 }
 
@@ -64,6 +77,9 @@ type UnimplementedAISServiceServer struct{}
 
 func (UnimplementedAISServiceServer) GetAisAccountByID(context.Context, *GetAccountStatusRequest) (*GetAccountStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAisAccountByID not implemented")
+}
+func (UnimplementedAISServiceServer) PublishAisAccount(context.Context, *PublishAisAccountRequest) (*PublishAisAccountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PublishAisAccount not implemented")
 }
 func (UnimplementedAISServiceServer) mustEmbedUnimplementedAISServiceServer() {}
 func (UnimplementedAISServiceServer) testEmbeddedByValue()                    {}
@@ -104,6 +120,24 @@ func _AISService_GetAisAccountByID_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AISService_PublishAisAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PublishAisAccountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AISServiceServer).PublishAisAccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AISService_PublishAisAccount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AISServiceServer).PublishAisAccount(ctx, req.(*PublishAisAccountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AISService_ServiceDesc is the grpc.ServiceDesc for AISService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -114,6 +148,10 @@ var AISService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetAisAccountByID",
 			Handler:    _AISService_GetAisAccountByID_Handler,
+		},
+		{
+			MethodName: "PublishAisAccount",
+			Handler:    _AISService_PublishAisAccount_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

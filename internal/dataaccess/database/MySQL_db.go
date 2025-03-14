@@ -57,6 +57,6 @@ func InitializeAndMigrateUpDB(databaseConfig configs.Database) (*sql.DB, func(),
 	}
 	return db, cleanup, nil
 }
-func InitializeGoquDB(db *sql.DB) *goqu.Database {
+func InitializeGoquDB(db *sql.DB) Database {
 	return goqu.New("postgres", db)
 }

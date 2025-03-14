@@ -30,3 +30,12 @@ type UpdateAccountStatusParams struct {
 	Account_type   ais_api.AccountType
 	Account_status ais_api.Status
 }
+
+type PublishAisAccountParams struct {
+	Account_id     uint64
+	Account_name   string
+	Account_type   ais_api.AccountType
+	Account_status ais_api.Status
+}
+
+type PublishAisAccountOutput struct{}
