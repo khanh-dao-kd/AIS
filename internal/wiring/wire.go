@@ -8,12 +8,14 @@ import (
 	"ais_service/internal/handler"
 	"ais_service/internal/logic"
 	"ais_service/internal/server"
+	"ais_service/internal/utils"
 
 	"github.com/google/wire"
 )
 
 var WireSet = wire.NewSet(
 	configs.WireSet,
+	utils.WireSet,
 	dataaccess.WireSet,
 	logic.WireSet,
 	handler.WireSet,

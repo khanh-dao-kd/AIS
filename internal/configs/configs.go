@@ -13,6 +13,7 @@ type ConfigFilePath string
 type Config struct {
 	GRPC     GRPC     `yaml:"grpc"`
 	HTTP     HTTP     `yaml:"http"`
+	Log      Log      `yaml:"log"`
 	Database Database `yaml:"database"`
 	MQ       MQ       `yaml:"mq"`
 }

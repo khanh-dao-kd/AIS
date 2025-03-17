@@ -9,6 +9,7 @@ import (
 
 	"github.com/doug-martin/goqu/v9"
 	_ "github.com/lib/pq" // Import PostgreSQL driver
+	"go.uber.org/zap"
 )
 
 type Database interface {
@@ -39,7 +40,7 @@ type Database interface {
 	Update(table interface{}) *goqu.UpdateDataset
 }
 
-func InitializeAndMigrateUpDB(databaseConfig configs.Database) (*sql.DB, func(), error) {
+func InitializeAndMigrateUpDB(databaseConfig configs.Database, logger *zap.Logger) (*sql.DB, func(), error) {
 	connectionString := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
 		databaseConfig.Username,
 		databaseConfig.Password,
@@ -54,6 +55,11 @@ func InitializeAndMigrateUpDB(databaseConfig configs.Database) (*sql.DB, func(),
 	}
 	cleanup := func() {
 		db.Close()
+	}
+	migrator := NewMigrator(db, logger)
+	err = migrator.Up(context.Background())
+	if err != nil {
+		logger.With(zap.Error(err)).Error("failed to execute database up migration")
 	}
 	return db, cleanup, nil
 }

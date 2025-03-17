@@ -6,6 +6,10 @@ import (
 	"context"
 )
 
+const (
+	AISAccountSubscription = "ais_account_subscription"
+)
+
 type AccountCreatedHandler interface {
 	Handle(ctx context.Context, event producer.AccountEvent) error
 }
@@ -21,9 +25,9 @@ func NewAccountCreatedHandler(accountLogic logic.AccountLogic) AccountCreatedHan
 }
 
 func (a accountCreatedHandler) Handle(ctx context.Context, event producer.AccountEvent) error {
-	_, err := a.accountLogic.CreateAisAccount(
+	_, err := a.accountLogic.AddAisMessage(
 		ctx,
-		logic.CreateAisAccountParams{
+		logic.AddAisMessaggParams{
 			Account_id:     event.Account_id,
 			Account_name:   event.Account_name,
 			Account_type:   event.Account_type,

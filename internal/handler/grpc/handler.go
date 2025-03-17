@@ -12,8 +12,11 @@ type grpcHandler struct {
 	publisherLogic logic.PublisherLogic
 }
 
-func NewGrpcHandler() ais_api.AISServiceServer {
-	return &grpcHandler{}
+func NewGrpcHandler(accountLogic logic.AccountLogic, publisherLogic logic.PublisherLogic) ais_api.AISServiceServer {
+	return &grpcHandler{
+		accountLogic:   accountLogic,
+		publisherLogic: publisherLogic,
+	}
 }
 
 func (g grpcHandler) GetAisAccountByID(ctx context.Context, request *ais_api.GetAccountStatusRequest) (*ais_api.GetAccountStatusResponse, error) {

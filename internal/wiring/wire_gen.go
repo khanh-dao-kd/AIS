@@ -11,6 +11,7 @@ import (
 	"ais_service/internal/dataaccess"
 	"ais_service/internal/dataaccess/database"
 	consumer2 "ais_service/internal/dataaccess/mq/consumer"
+	"ais_service/internal/dataaccess/mq/producer"
 	"ais_service/internal/handler"
 	"ais_service/internal/handler/consumer"
 	"ais_service/internal/handler/grpc"
@@ -18,44 +19,61 @@ import (
 	"ais_service/internal/handler/http"
 	"ais_service/internal/logic"
 	"ais_service/internal/server"
+	"ais_service/internal/utils"
 	"github.com/google/wire"
 )
 
 // Injectors from wire.go:
 
 func InitializeServer(configFilePath configs.ConfigFilePath) (*server.StandaloneServer, func(), error) {
-	aisServiceServer := grpc.NewGrpcHandler()
 	config, err := configs.NewConfig(configFilePath)
 	if err != nil {
 		return nil, nil, err
 	}
+	configsDatabase := config.Database
+	log := config.Log
+	logger, cleanup, err := utils.InitializeLogger(log)
+	if err != nil {
+		return nil, nil, err
+	}
+	db, cleanup2, err := database.InitializeAndMigrateUpDB(configsDatabase, logger)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	databaseDatabase := database.InitializeGoquDB(db)
+	aisAccountDataAccessor := database.NewAisAccountDataAccessor(databaseDatabase, logger)
+	accountLogic := logic.NewAccountLogic(aisAccountDataAccessor, logger)
+	mq := config.MQ
+	client, err := producer.NewClient(mq, logger)
+	if err != nil {
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	accountProducer := producer.NewAccountProducer(client, logger)
+	publisherLogic := logic.NewPublisher(accountProducer)
+	aisServiceServer := grpc.NewGrpcHandler(accountLogic, publisherLogic)
 	configsGRPC := config.GRPC
 	authInterceptor := middleware.NewAuthInterceptor()
 	grpcServer := grpc.NewServer(aisServiceServer, configsGRPC, authInterceptor)
 	configsHTTP := config.HTTP
 	httpServer := http.NewServer(configsHTTP, configsGRPC)
-	configsDatabase := config.Database
-	db, cleanup, err := database.InitializeAndMigrateUpDB(configsDatabase)
-	if err != nil {
-		return nil, nil, err
-	}
-	databaseDatabase := database.InitializeGoquDB(db)
-	aisAccountDataAccessor := database.NewAisAccountDataAccessor(databaseDatabase)
-	accountLogic := logic.NewAccountLogic(aisAccountDataAccessor)
 	accountCreatedHandler := consumer.NewAccountCreatedHandler(accountLogic)
-	mq := config.MQ
-	consumerConsumer, err := consumer2.NewPubSubConsumer(mq)
+	consumerConsumer, err := consumer2.NewPubSubConsumer(mq, logger)
 	if err != nil {
+		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
 	consumerServer := consumer.NewConsumerServer(accountCreatedHandler, consumerConsumer)
-	standaloneServer := server.NewStandaloneServer(grpcServer, httpServer, consumerServer)
+	standaloneServer := server.NewStandaloneServer(grpcServer, httpServer, consumerServer, mq, logger)
 	return standaloneServer, func() {
+		cleanup2()
 		cleanup()
 	}, nil
 }
 
 // wire.go:
 
-var WireSet = wire.NewSet(configs.WireSet, dataaccess.WireSet, logic.WireSet, handler.WireSet, server.WireSet)
+var WireSet = wire.NewSet(configs.WireSet, utils.WireSet, dataaccess.WireSet, logic.WireSet, handler.WireSet, server.WireSet)

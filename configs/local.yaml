@@ -1,17 +1,15 @@
 database:
   host: 127.0.0.1
-  port: 3306
-  username: root
-  password: example
-  database: goload
+  port: 5432
+  username: admin
+  password: admin
+  database: ais
 
 grpc:
   address: "0.0.0.0:8080"
-  get_download_task_file:
-    response_buffer_size: 1kB
 
 http:
   address: "0.0.0.0:8081"
 
 mq:
-  projectID: "account.event"
+  projectID: "test"

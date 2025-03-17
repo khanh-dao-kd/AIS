@@ -1,0 +1,180 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api/ais_api.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "AISService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/ais_api.AISService/GetAisAccountByID": {
+      "post": {
+        "operationId": "AISService_GetAisAccountByID",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ais_apiGetAccountStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ais_apiGetAccountStatusRequest"
+            }
+          }
+        ],
+        "tags": [
+          "AISService"
+        ]
+      }
+    },
+    "/ais_api.AISService/PublishAisAccount": {
+      "post": {
+        "operationId": "AISService_PublishAisAccount",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ais_apiPublishAisAccountResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ais_apiPublishAisAccountRequest"
+            }
+          }
+        ],
+        "tags": [
+          "AISService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "ais_apiAccountType": {
+      "type": "string",
+      "enum": [
+        "CASA",
+        "GA",
+        "VAN"
+      ],
+      "default": "CASA"
+    },
+    "ais_apiGetAccountStatusRequest": {
+      "type": "object",
+      "properties": {
+        "accountId": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "ais_apiGetAccountStatusResponse": {
+      "type": "object",
+      "properties": {
+        "accountId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "accountName": {
+          "type": "string"
+        },
+        "accountType": {
+          "$ref": "#/definitions/ais_apiAccountType"
+        },
+        "accountStatus": {
+          "$ref": "#/definitions/ais_apiStatus"
+        }
+      }
+    },
+    "ais_apiPublishAisAccountRequest": {
+      "type": "object",
+      "properties": {
+        "accountId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "accountName": {
+          "type": "string"
+        },
+        "accountType": {
+          "$ref": "#/definitions/ais_apiAccountType"
+        },
+        "accountStatus": {
+          "$ref": "#/definitions/ais_apiStatus"
+        }
+      }
+    },
+    "ais_apiPublishAisAccountResponse": {
+      "type": "object"
+    },
+    "ais_apiStatus": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive",
+        "closed"
+      ],
+      "default": "active"
+    },
+    "googlerpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    }
+  }
+}

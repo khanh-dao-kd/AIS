@@ -24,8 +24,10 @@ func NewConsumerServer(accountCreatedHandler AccountCreatedHandler, mqConsumer c
 }
 
 func (c consumerServer) Start(ctx context.Context) error {
+
 	c.mqConsumer.RegisterHandler(
 		producer.AISAccountTopic,
+		AISAccountSubscription,
 		func(ctx context.Context, topicName string, payload []byte) error {
 			var event producer.AccountEvent
 			if err := json.Unmarshal(payload, &event); err != nil {
