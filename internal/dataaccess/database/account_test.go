@@ -1,82 +1,77 @@
-package database_test
+package database
 
 import (
-	"ais_service/internal/dataaccess/database"
-	"ais_service/mocks"
+	"ais_service/internal/configs"
+	"ais_service/internal/generated/grpc/ais_api"
 	"context"
+	"database/sql"
 	"testing"
 
-	"github.com/doug-martin/goqu/v9"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
 
-func TestCreateAisAccount(t *testing.T) {
-	mockDB := new(mocks.Database)
-	accessor := database.NewAisAccountDataAccessor(mockDB, &zap.Logger{})
-
-	account := database.AisAccount{
-		Account_id:     1,
-		Account_name:   "Test Account",
-		Account_type:   1,
-		Account_status: 2,
+var (
+	testDBConfig = configs.Database{
+		Username: "admin",
+		Password: "admin",
+		Host:     "localhost",
+		Port:     5432,
+		Database: "ais",
 	}
+)
 
-	// Create a valid InsertDataset
-	mockInsert := goqu.New("postgres", nil).Insert(database.TabAisAccount)
-	mockDB.On("Insert", database.TabAisAccount).Return(mockInsert)
+func setupTestDB(t *testing.T) (*sql.DB, func()) {
+	logger, _ := zap.NewDevelopment()
+	db, cleanup, err := InitializeAndMigrateUpDB(testDBConfig, logger)
+	require.NoError(t, err, "failed to set up test database")
 
-	// Mock ExecContext on the Executor
-	mockDB.On("ExecContext", mock.Anything, mock.Anything).Return(nil, nil)
-
-	id, err := accessor.CreateAisAccount(context.Background(), account)
-	assert.NoError(t, err)
-	assert.Equal(t, account.Account_id, id)
-	mockDB.AssertExpectations(t)
+	return db, cleanup
 }
 
-func TestGetAisAccountByID(t *testing.T) {
-	mockDB := new(mocks.Database)
-	accessor := database.NewAisAccountDataAccessor(mockDB, &zap.Logger{})
+func TestAisAccountDataAccessor(t *testing.T) {
+	db, cleanup := setupTestDB(t)
+	defer cleanup() // Ensure cleanup happens after tests
 
-	account := database.AisAccount{
-		Account_id:     1,
-		Account_name:   "Test Account",
-		Account_type:   1,
-		Account_status: 0,
-	}
+	database := InitializeGoquDB(db)
+	logger, _ := zap.NewDevelopment()
+	accessor := NewAisAccountDataAccessor(database, logger)
 
-	mockSelect := new(goqu.SelectDataset)
-	mockDB.On("From", database.TabAisAccount).Return(mockSelect)
-	mockDB.On("ScanStructContext", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
-		arg := args.Get(1).(*database.AisAccount)
-		*arg = account
-	}).Return(true, nil)
+	t.Run("CreateAisAccount", func(t *testing.T) {
+		ctx := context.Background()
+		account := AisAccount{
+			Account_id:     1,
+			Account_name:   "Test Account",
+			Account_type:   ais_api.AccountType_CASA,
+			Account_status: ais_api.Status_active,
+		}
 
-	retrievedAccount, err := accessor.GetAisAccountByID(context.Background(), account.Account_id)
-	assert.NoError(t, err)
-	assert.Equal(t, account, retrievedAccount)
-	mockDB.AssertExpectations(t)
-}
+		id, err := accessor.CreateAisAccount(ctx, account)
+		require.NoError(t, err)
+		require.Equal(t, account.Account_id, id)
+	})
 
-func TestUpdateAisAccount(t *testing.T) {
-	mockDB := new(mocks.Database)
-	logger := zap.NewNop()
-	accessor := database.NewAisAccountDataAccessor(mockDB, logger)
+	t.Run("GetAisAccountByID", func(t *testing.T) {
+		ctx := context.Background()
+		account, err := accessor.GetAisAccountByID(ctx, 1)
+		require.NoError(t, err)
+		require.Equal(t, "Test Account", account.Account_name)
+	})
 
-	account := database.AisAccount{
-		Account_id:     1,
-		Account_name:   "Test Account",
-		Account_type:   1,
-		Account_status: 0,
-	}
+	t.Run("UpdateAisAccount", func(t *testing.T) {
+		ctx := context.Background()
+		updatedAccount := AisAccount{
+			Account_id:     1,
+			Account_name:   "Updated Name",
+			Account_type:   ais_api.AccountType_CASA,
+			Account_status: ais_api.Status_active,
+		}
 
-	mockUpdate := new(goqu.UpdateDataset)
-	mockDB.On("Update", database.TabAisAccount).Return(mockUpdate)
-	mockDB.On("ExecContext", mock.Anything).Return(nil, nil)
+		err := accessor.UpdateAisAccount(ctx, updatedAccount)
+		require.NoError(t, err)
 
-	err := accessor.UpdateAisAccount(context.Background(), account)
-	assert.NoError(t, err)
-	mockDB.AssertExpectations(t)
+		account, err := accessor.GetAisAccountByID(ctx, 1)
+		require.NoError(t, err)
+		require.Equal(t, "Updated Name", account.Account_name)
+	})
 }

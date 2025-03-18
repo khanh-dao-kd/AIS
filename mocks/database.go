@@ -17,6 +17,16 @@ type Database struct {
 	mock.Mock
 }
 
+// Begin implements goqu.SQLDatabase.
+func (_m *Database) Begin() (*sql.Tx, error) {
+	panic("unimplemented")
+}
+
+// BeginTx implements goqu.SQLDatabase.
+func (_m *Database) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error) {
+	panic("unimplemented")
+}
+
 // Delete provides a mock function with given fields: table
 func (_m *Database) Delete(table interface{}) *goqu.DeleteDataset {
 	ret := _m.Called(table)

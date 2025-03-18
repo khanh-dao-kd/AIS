@@ -21,8 +21,10 @@ func TestAddAisMessage_AccountExists(t *testing.T) {
 	ctx := context.Background()
 	params := logic.AddAisMessaggParams{Account_id: 1, Account_name: "Test", Account_type: 0, Account_status: 1}
 
-	mockAccessor.On("GetAisAccountByIDForUpdate", ctx, params.Account_id).Return(database.AisAccount{}, nil)
-	mockAccessor.On("UpdateAisAccount", ctx, mock.Anything).Return(logic.UpdateAccountStatusOutput{Account_id: 1}, nil)
+	mockAccessor.On("GetAisAccountByIDForUpdate", mock.Anything, params.Account_id).
+		Return(database.AisAccount{Account_id: 1}, nil)
+	mockAccessor.On("UpdateAisAccount", mock.Anything, mock.Anything).
+		Return(nil)
 
 	output, err := logicService.AddAisMessage(ctx, params)
 
