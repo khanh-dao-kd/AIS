@@ -55,8 +55,9 @@ func InitializeServer(configFilePath configs.ConfigFilePath) (*server.Standalone
 	publisherLogic := logic.NewPublisher(accountProducer)
 	aisServiceServer := grpc.NewGrpcHandler(accountLogic, publisherLogic)
 	configsGRPC := config.GRPC
-	authInterceptor := middleware.NewAuthInterceptor()
-	grpcServer := grpc.NewServer(aisServiceServer, configsGRPC, authInterceptor)
+	authInterceptor := middleware.NewAuthInterceptor(logger)
+	validationInterceptor := middleware.NewValidationInterceptor(logger)
+	grpcServer := grpc.NewServer(aisServiceServer, configsGRPC, authInterceptor, validationInterceptor)
 	configsHTTP := config.HTTP
 	httpServer := http.NewServer(configsHTTP, configsGRPC)
 	accountCreatedHandler := consumer.NewAccountCreatedHandler(accountLogic)

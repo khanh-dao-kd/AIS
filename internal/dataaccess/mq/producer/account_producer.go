@@ -52,5 +52,7 @@ func (a accountProducer) Produce(ctx context.Context, event AccountEvent) error 
 		logger.With(zap.Error(err)).Error("failed to produce event")
 		return status.Error(codes.Internal, "failed to produce event")
 	}
+	logger.Info("Publish message to Pubsub", zap.Uint64("account_id", event.Account_id))
+
 	return nil
 }

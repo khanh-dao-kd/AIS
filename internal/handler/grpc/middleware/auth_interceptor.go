@@ -1,42 +1,38 @@
 package middleware
 
 import (
+	"ais_service/internal/utils"
 	"context"
+	"math/rand"
+	"time"
 
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type AuthInterceptor interface {
 	JWTAuthMiddleware(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error)
 }
 
-type authInterceptor struct{}
+type authInterceptor struct {
+	logger *zap.Logger
+}
 
-func NewAuthInterceptor() AuthInterceptor {
-	return &authInterceptor{}
+func NewAuthInterceptor(logger *zap.Logger) AuthInterceptor {
+	rand.Seed(time.Now().UnixNano())
+	return &authInterceptor{
+		logger: logger,
+	}
 }
 
 func (a authInterceptor) JWTAuthMiddleware(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-	// md, ok := metadata.FromIncomingContext(ctx)
-	// if !ok {
-	// 	return nil, status.Error(codes.Unauthenticated, "metadata is not provided")
-	// }
+	logger := utils.LoggerWithContext(ctx, a.logger)
 
-	// // extract token from authorization header
-	// token := md["authorization"]
-	// if len(token) == 0 {
-	// 	return nil, status.Error(codes.Unauthenticated, "authorization token is not provided")
-	// }
-
-	// // validate token and retrieve the userID
-	// userID, err := a.authService.ValidateToken(token[0])
-	// if err != nil {
-	// 	return nil, status.Error(codes.Unauthenticated, "invalid token: %v", err)
-	// }
-
-	// // add our user ID to the context, so we can use it in our RPC handler
-	// ctx = context.WithValue(ctx, "user_id", userID)
-
-	// call our handler
+	if rand.Intn(100) < 10 {
+		logger.Error("Unanthentication request")
+		return nil, status.Error(codes.Unauthenticated, "random authentication failure")
+	}
 	return handler(ctx, req)
 }

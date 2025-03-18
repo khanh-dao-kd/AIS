@@ -15,16 +15,18 @@ type Server interface {
 }
 
 type server struct {
-	handler         ais_api.AISServiceServer
-	grpcConfig      configs.GRPC
-	authInterceptor middleware.AuthInterceptor
+	handler             ais_api.AISServiceServer
+	grpcConfig          configs.GRPC
+	authInterceptor     middleware.AuthInterceptor
+	validateInterceptor middleware.ValidationInterceptor
 }
 
-func NewServer(handler ais_api.AISServiceServer, grpcConfig configs.GRPC, authInterceptor middleware.AuthInterceptor) Server {
+func NewServer(handler ais_api.AISServiceServer, grpcConfig configs.GRPC, authInterceptor middleware.AuthInterceptor, validateInterceptor middleware.ValidationInterceptor) Server {
 	return &server{
-		handler:         handler,
-		grpcConfig:      grpcConfig,
-		authInterceptor: authInterceptor,
+		handler:             handler,
+		grpcConfig:          grpcConfig,
+		authInterceptor:     authInterceptor,
+		validateInterceptor: validateInterceptor,
 	}
 }
 
@@ -36,7 +38,10 @@ func (s server) Start(ctx context.Context) error {
 	defer listener.Close()
 
 	server := grpc.NewServer(
-		grpc.UnaryInterceptor(s.authInterceptor.JWTAuthMiddleware),
+		grpc.ChainUnaryInterceptor(
+			s.authInterceptor.JWTAuthMiddleware,
+			s.validateInterceptor.ValidateRequestMiddleware,
+		),
 	)
 	ais_api.RegisterAISServiceServer(server, s.handler)
 
